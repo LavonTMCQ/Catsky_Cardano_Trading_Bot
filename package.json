@@ -1,0 +1,30 @@
+{
+  "name": "catsky-bot-clean",
+  "version": "1.0.0",
+  "description": "ADA → CATSKY swap bot (Lucid 0.10.9 + @minswap/sdk 0.4.3)",
+  "type": "module",
+  "engines": {
+    "node": ">=20.17 <21"
+  },
+  "scripts": {
+    "swap": "node --experimental-wasm-modules swap.js",
+    "start": "npm run swap"
+  },
+  "dependencies": {
+    "@blockfrost/blockfrost-js": "5.7.0",
+    "@minswap/sdk": "0.4.3",
+    "dotenv": "^17.0.1",
+    "lucid-cardano": "^0.10.11",
+    "safe-stable-stringify": "^2.5.0"
+  },
+  "keywords": [
+    "cardano",
+    "catsky",
+    "minswap",
+    "lucid",
+    "dex",
+    "swap"
+  ],
+  "author": "",
+  "license": "ISC"
+}
