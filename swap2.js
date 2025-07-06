@@ -1,4 +1,4 @@
-//swap.js — 1 ADA ➜ CATSKY (Mainne
+//swap2.js — 1 ADA ➜ CATSKY (Mainnet)
 
 import dotenv from "dotenv";
 dotenv.config();
@@ -11,10 +11,10 @@ import {
   DexV2,
   DexV2Calculation,
   NetworkId,
+  OrderV2,
+  getBackendBlockfrostLucidInstance,
 } from "@minswap/sdk";
-import { Lucid, Blockfrost, Data } from "lucid-cardano";
 import { BlockFrostAPI } from "@blockfrost/blockfrost-js";
-import { OrderV2 } from "@minswap/sdk";
 
 console.log("BF_PROJECT_ID:", process.env.BF_PROJECT_ID);
 console.log("MNEMONIC:", process.env.MNEMONIC ? "Loaded" : "Not loaded");
@@ -28,12 +28,15 @@ const AMOUNT_IN = 1_000_000n;
      
 async function main() {
   console.log("🔗 Connecting to Blockfrost...");
-  const lucid = await Lucid.new(
-    new Blockfrost("https://cardano-mainnet.blockfrost.io/api/v0", BF_PROJECT_ID),
-    "Mainnet"
+  const sender = "addr1qx492sqgzk5c7jljapc4kq3jmf29pqz5v39h00dq4wvtszczq5gfxkek2fxdwevtjcjaf8hdap97auc744p8ppjf4vns394f0k";
+
+  const lucid = await getBackendBlockfrostLucidInstance(
+    NetworkId.MAINNET,
+    BF_PROJECT_ID,
+    "https://cardano-mainnet.blockfrost.io/api/v0",
+    sender
   );
   await lucid.selectWalletFromSeed(MNEMONIC.trim());
-  const sender = await lucid.wallet.address();
 
   console.log("📦 Gathering ADA-only UTxOs...");
   const all = await lucid.wallet.getUtxos();
@@ -52,57 +55,46 @@ async function main() {
   const adaIsA = pool.assetA.policyId === "" && pool.assetA.assetName === "";
   const direction = adaIsA ? OrderV2.Direction.A_TO_B : OrderV2.Direction.B_TO_A;
 
-const rawOut = DexV2Calculation.calculateAmountOut({
-  reserveIn: adaIsA ? pool.reserveA : pool.reserveB,
-  reserveOut: adaIsA ? pool.reserveB : pool.reserveA,
-  amountIn: AMOUNT_IN,
-  tradingFeeNumerator: adaIsA ? pool.feeA[0] : pool.feeB[0],
-});
+  const rawOut = DexV2Calculation.calculateAmountOut({
+    reserveIn: adaIsA ? pool.reserveA : pool.reserveB,
+    reserveOut: adaIsA ? pool.reserveB : pool.reserveA,
+    amountIn: AMOUNT_IN,
+    tradingFeeNumerator: adaIsA ? pool.feeA[0] : pool.feeB[0],
+  });
 
-if (rawOut === 0n) throw new Error("❌ Pool reserves too low");
+  if (rawOut === 0n) throw new Error("❌ Pool reserves too low");
 
-const minimumAmountOut = calculateAmountWithSlippageTolerance({
-  slippageTolerancePercent: SLIPPAGE_PCT,
-  amount: rawOut,
-  type: "down",
-});
-
-// Now, you can use minimumAmountOut below
-console.log(`Expect ~${rawOut} tokens (min ${minimumAmountOut})`);
-
-// Now, you can use minimumAmountOut below
-console.log(`Expect ~${rawOut} tokens (min ${minimumAmountOut})`);
-  
-  const minimumOut = calculateAmountWithSlippageTolerance({
+  const minimumAmountOut = calculateAmountWithSlippageTolerance({
     slippageTolerancePercent: SLIPPAGE_PCT,
     amount: rawOut,
     type: "down",
   });
 
-  // CHANGE ONLY THIS LINE:
-  console.log(`Expect ~${rawOut} tokens (min ${minimumOut})`);
+  console.log(`Expect ~${rawOut} tokens (min ${minimumAmountOut})`);
 
-console.log("🔥 Building swap transaction...");
+  console.log("🔥 Building swap transaction...");
 
-const tx = await new DexV2(lucid, adapter).createBulkOrdersTx({
-  sender,
-  availableUtxos: utxos,
-  orderOptions: [{
-    type: OrderV2.StepType.SWAP_EXACT_IN,
-    amountIn: AMOUNT_IN,
-    assetIn: ADA,
-    direction,
-    minimumAmountOut,
-    lpAsset: pool.lpAsset,
-    isLimitOrder: false,
-    killOnFailed: false,
-    // omit `datum:` here
-  }],
-});
+  const txComplete = await new DexV2(lucid, adapter).createBulkOrdersTx({
+    sender,
+    availableUtxos: utxos,
+    orderOptions: [{
+      type: OrderV2.StepType.SWAP_EXACT_IN,
+      amountIn: AMOUNT_IN,
+      assetIn: ADA,
+      direction,
+      minimumAmountOut,
+      lpAsset: pool.lpAsset,
+      isLimitOrder: false,
+      killOnFailed: false,
+      // omit `datum:` here
+    }],
+  });
 
-console.log("🖊 Signing & submitting...");
-const txHash = await tx.sign().complete().then(c => c.submit());
-console.log("🎉 Success! TX hash:", txHash);
+  console.log("🖊 Signing & submitting...");
+  const signedTx = txComplete.sign();
+  const completedTx = await signedTx.commit();
+  const txHash = await completedTx.submit();
+  console.log("🎉 Success! TX hash:", txHash);
 
 } // <--- End of main function
     
