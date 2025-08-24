@@ -8,14 +8,30 @@
   },
   "scripts": {
     "swap": "node --experimental-wasm-modules swap2.js",
-    "start": "npm run swap"
+    "cashfire": "node --experimental-wasm-modules cashfire.js",
+    "monitor": "node --experimental-wasm-modules monitor_catsky.js",
+    "check": "node --experimental-wasm-modules monitor_catsky.js check",
+    "start": "npm run swap",
+    "bot": "node --experimental-wasm-modules src/main-bot.js",
+    "bot:dry": "DRY_RUN=true node --experimental-wasm-modules src/main-bot.js",
+    "arbitrage": "node --experimental-wasm-modules src/arbitrage/scanner.js",
+    "arbitrage-executor": "node --experimental-wasm-modules src/arbitrage/executor.js",
+    "arbitrage-bot": "node --experimental-wasm-modules src/arbitrage/bot.js",
+    "price-monitor": "node --experimental-wasm-modules src/price-monitor.js",
+    "setup-db": "node --experimental-wasm-modules src/utils/setup-database.js",
+    "test-dex": "node --experimental-wasm-modules src/dex/test-unified-interface.js",
+    "dashboard": "node --experimental-wasm-modules src/dashboard.js"
   },
   "dependencies": {
     "@blockfrost/blockfrost-js": "5.7.0",
     "@minswap/sdk": "^0.4.3",
+    "chalk": "^5.6.0",
+    "cli-table3": "^0.6.5",
     "dotenv": "^17.0.1",
     "lucid-cardano": "^0.10.11",
-    "safe-stable-stringify": "^2.5.0"
+    "node-cron": "^3.0.3",
+    "safe-stable-stringify": "^2.5.0",
+    "ws": "^8.16.0"
   },
   "keywords": [
     "cardano",
